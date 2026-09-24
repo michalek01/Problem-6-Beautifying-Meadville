@@ -8,23 +8,45 @@ Our algorithm determines whether N additional trees can be planted in each row o
 
 
 ```python
-def plant_trees(N,plots):
-    positions = []
 
+def plant_trees(N, plots):
+    empty = []
+
+    # Find all empty plots
     for i in range(len(plots)):
-    if len(positions) == N:
-    return True,positions
+        if plots[i] == 0:
+            empty.append(i)
 
-    if plots[i] == 0:
-        left_empty = (i == 0 or plots[i-1] == 0)
-        right empty = (i == len(plots) - 1 or plots[i + 1] == 0)
+    # Start with no new trees planted
+    stack = [([], 0)]
 
-        if left_empty and right empty:
-            plots[i] = 1
-            positions.append(i)
+    while stack:
+        positions, start = stack.pop()
 
-    if len(positions) == N:
-        return True, positions
+        # Check whether enough trees have been planted
+        if len(positions) == N:
+            return True, positions
+
+        # Try each remaining empty plot
+        for j in range(start, len(empty)):
+            position = empty[j]
+            valid = True
+
+            # Check existing trees
+            if position > 0 and plots[position - 1] == 1:
+                valid = False
+
+            if position < len(plots) - 1 and plots[position + 1] == 1:
+                valid = False
+
+            # Check newly planted trees
+            for planted in positions:
+                if abs(position - planted) == 1:
+                    valid = False
+
+            if valid:
+                new_positions = positions + [position]
+                stack.append((new_positions, j + 1))
 
     return False, []
 ```
