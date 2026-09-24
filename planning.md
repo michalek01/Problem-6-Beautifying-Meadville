@@ -1,1 +1,3 @@
-
+Planning and Analysis
+Problem Formulation
+The objective of the Problem 6 is to plant trees along a street in Meadville. These streets are divided into a row of plots and we need to plant N trees into empty lots. There are already lots that have tree in them and two trees cannot be in adjacent plots. The frist and last plots each have only one neighbor. We will be determining whether N new trees can be planted and if they can, return the positions of the plots to plant them in. Our inputs will be the interget N ( the amount of new trees ) and a list of 1s and 0s. 1 means the plot has a tree and 0 means the plot has no tree. 
