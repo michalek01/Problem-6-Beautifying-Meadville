@@ -77,7 +77,7 @@ After planting a tree, the algorithm changes that plot to 1. This makes sure the
 
 The greedy strategy works because planting a tree in the first valid plot does not stop the algorithm from finding valid plots later in the street.
 
-```text
+```python
 Algorithm PlantTreesGreedy(N, plots):
     input: Integer N, list of plots of length P
     output: Boolean and list of planting positions
