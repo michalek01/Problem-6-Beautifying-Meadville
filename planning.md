@@ -2,110 +2,63 @@
 
 ## Problem Formulation
 
-The goal of Problem 6 is to plant N new trees along a street in Meadville. The street is a list of plots. A 1 means that a plot already has a tree, and a 0 means that the plot is empty.
+We want to find out whether we can plant $N$ new trees along a street in Meadville without putting any two trees next to each other. The street is a list of plots, where 1 means a tree is already there and 0 means the plot is empty. We assume the starting street follows this rule and $N$ is a nonnegative integer. The first and last plots have only one neighbor.
 
-No two trees can be in adjacent plots. This rule applies to both the trees already in the list and the new trees that are planted. The first and last plots only have one neighbor.
-
-The input is an integer N and a list of 1s and 0s. The output should say whether N trees can be planted. If it is possible, the algorithm returns the positions where the new trees should be planted. If it is not possible, it returns False and an empty list.
+The input is $N$ and the list of plots. If enough trees can be planted, the output is True and a list of their positions, starting at position 0. Otherwise, the output is False and an empty list. For example, with plots [1, 0, 0, 0, 1] and $N=1$, we can plant at position 2. If $N=2$, there is not enough room. Both algorithms leave the original list unchanged.
 
 ## Baseline Solution
 
-The first algorithm is the baseline solution. It uses backtracking. It first finds all of the empty plots. Then it tries different possible groups of empty plots where trees could be planted.
+Our baseline tries different groups of empty plots. It uses backtracking, which means trying a choice and returning to other choices if it does not lead to a solution. A stack keeps track of the groups we still need to try. Each group stores the positions chosen so far and where to start looking next, so we do not try the same group in different orders.
 
-For each possible plot, the algorithm checks whether it is next to an existing tree or a newly planted tree. If the plot is valid, it adds that position and continues trying more plots. If it finds N valid positions, it returns True and the list of positions. If it cannot find enough valid positions, it returns False and an empty list.
-
-This baseline is simple because it checks many possible choices. However, it can be slow when there are many empty plots.
-
-```python
-def plant_trees(N, plots):
-    empty = []
-
-    # Find all empty plots
-    for i in range(len(plots)):
-        if plots[i] == 0:
-            empty.append(i)
-
-    # Start with no new trees planted
-    stack = [([], 0)]
-
-    while stack:
-        positions, start = stack.pop()
-
-        # Check whether enough trees have been planted
-        if len(positions) == N:
-            return True, positions
-
-        # Try each remaining empty plot
-        for j in range(start, len(empty)):
-            position = empty[j]
-            valid = True
-
-            # Check existing trees
-            if position > 0 and plots[position - 1] == 1:
-                valid = False
-
-            if position < len(plots) - 1 and plots[position + 1] == 1:
-                valid = False
-
-            # Check newly planted trees
-            for planted in positions:
-                if abs(position - planted) == 1:
-                    valid = False
-
-            if valid:
-                new_positions = positions + [position]
-                stack.append((new_positions, j + 1))
-
-    return False, []
-```
-
-## Algorithmic Strategy
-
-The second algorithm uses a greedy strategy. It looks at the plots from left to right one time.
-
-When it finds an empty plot, it checks the plot on the left and the plot on the right. If both neighboring plots are empty, or if there is no neighbor because the plot is at the beginning or end of the street, the algorithm plants a tree in that plot.
-
-After planting a tree, the algorithm changes that plot to 1. This makes sure the next plot will not be used because trees cannot be next to each other. The algorithm keeps going until it has planted N trees or reaches the end of the list.
-
-The greedy strategy works because planting a tree in the first valid plot does not stop the algorithm from finding valid plots later in the street.
+For each group, we look for another empty plot that is not next to an existing tree or a tree already chosen. We add each valid choice to the stack and keep searching until a group contains $N$ positions. If the stack becomes empty, none of the groups worked. This approach is straightforward, but it can take a long time because it explores many possible groups.
 
 ```text
-Algorithm PlantTreesGreedy(N, plots):
-    input: Integer N, list of plots of length P
-    output: Boolean and list of planting positions
+ALGORITHM PlantTreesBaseline(N, plots)
+    empty_positions ← positions of all empty plots
+    stack ← an empty stack
+    PUSH (empty list, 0) onto stack
 
-    positions = []
-    working_plots = copy of plots
+    WHILE stack is not empty
+        (chosen, start) ← POP from stack
+        IF number of chosen positions = N
+            RETURN (True, chosen)
 
-    for i = 0 to P - 1:
-        if length(positions) == N:
-            return True, positions
+        FOR each entry j in empty_positions, starting at start
+            position ← empty_positions[j]
+            IF no existing neighbor of position contains a tree
+               AND position is not next to any position in chosen
+                next_choices ← a copy of chosen with position added
+                PUSH (next_choices, j + 1) onto stack
 
-        if working_plots[i] == 0:
-            left_empty =
-                (i == 0 OR working_plots[i - 1] == 0)
+    RETURN (False, empty list)
+```
 
-            right_empty =
-                (i == P - 1 OR working_plots[i + 1] == 0)
+## Proposed Algorithmic Strategy
 
-            if left_empty AND right_empty:
-                working_plots[i] = 1
-                append i to positions
+The proposed algorithm uses a greedy strategy. It goes from left to right and plants a tree at the first available plot whose neighbors are empty. It records that position and marks the plot as occupied in a copy of the street. This prevents it from planting in the next plot. It stops when it has planted $N$ trees or checked the whole street.
 
-    if length(positions) == N:
-        return True, positions
+Choosing the earliest valid plot leaves at least as much room on the right as choosing a later plot. If a solution plants its first new tree later, we can move that tree to the earliest valid plot without putting it next to an existing tree or the next new tree. We can repeat this reasoning for the remaining plots. This is why the greedy algorithm can find enough positions whenever a valid solution exists.
 
-    return False, []
+```text
+ALGORITHM PlantTreesGreedy(N, plots)
+    working_plots ← a copy of plots
+    chosen ← an empty list
+    IF N = 0
+        RETURN (True, chosen)
+
+    FOR each position from left to right in working_plots
+        IF this plot is empty
+           AND every neighbor that exists is empty
+            Mark this plot as occupied in working_plots
+            Add this position to chosen
+            IF number of chosen positions = N
+                RETURN (True, chosen)
+
+    RETURN (False, empty list)
 ```
 
 ## Complexity Analysis
 
-Let P be the number of plots in the list.
+Let $P$ be the total number of plots. We use this same input size to compare both algorithms. The baseline searches groups of empty plots, and there are at most $2^P$ possible groups. For each group, it may check up to $P$ candidates and compare each one with up to $P$ chosen positions. This gives a worst case upper bound of $O(P^2 2^P)$. Not every group is valid or explored, so this is an upper bound rather than an exact count. The main issue is that the search can grow exponentially as the street gets longer.
 
-The baseline backtracking algorithm can try many different combinations of empty plots. If there are E empty plots, it can examine up to 2^E possible combinations. Therefore, its worst-case running time is O(2^E). This can be slow when the street has many empty plots.
-
-The greedy algorithm looks at each plot at most one time. For every plot, it only checks the left and right neighbor. Each check takes constant time.
-
-Therefore, the running time of the greedy algorithm is Theta(P). The algorithm copies the list of plots and saves the positions of newly planted trees, so it uses O(P) extra space in the worst case.
-
-The greedy algorithm is much faster than the baseline algorithm for large inputs because it does not try many different combinations of plots.
+The greedy algorithm copies the street and checks each plot once. At each plot, it checks at most two neighbors, which takes constant time. Its running time is $\Theta(P)$. Unlike the baseline, it does not search different groups of positions, so it scales much better as the number of plots increases.
