@@ -25,7 +25,7 @@ def main():
     if args.repeats < 1:
         parser.error("--repeats must be at least 1")
 
-    sizes = (8, 12, 16, 20, 24)
+    sizes = (8, 12, 16, 20, 24, 28, 32)
     print("plots,requested,backtracking_seconds,greedy_seconds")
     for size in sizes:
         plots = [0] * size
