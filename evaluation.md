@@ -1,12 +1,12 @@
-# Deliverable 2: Implementation and Evaluation
+# Implementation and Evaluation
 
-## Implementation
+## Empirical Evaluation
 
-`tree_planting.py` contains two functions with the same contract: a successful call returns `(True, positions)`, where positions are zero-based plot indices; an unsuccessful request returns `(False, [])`. Both reject negative or non-integer tree counts, plot values other than integer 0 or 1, and starting streets with adjacent existing trees by raising `ValueError`. Neither function modifies its input.
+### Implementation and Testing
 
-The baseline, `plant_trees_backtracking`, searches combinations of empty plots and can take exponential time in the number of plots. The proposed `plant_trees_greedy` scans from left to right, planting whenever the current plot and its neighbors allow it. It runs in $O(P)$ time and uses $O(P)$ additional space, where $P$ is the street length.
+The file tree_planting.py contains both algorithms. Each returns True and the new planting positions when the request is possible, or False and an empty list when it is not. Both keep the original street unchanged and raise ValueError for invalid inputs, such as a negative tree count or adjacent existing trees.
 
-## Testing
+We checked empty streets, requests for zero trees, plots at the ends of the street, impossible requests, and whether the input stays unchanged. The tests also compare both algorithms on every valid street of up to eight plots, with requested counts from zero through $P+1$. For each successful greedy result, they check that the returned positions follow the planting rule. All six tests passed in the new run.
 
 Run the tests with:
 
@@ -14,9 +14,9 @@ Run the tests with:
 python -m unittest -v
 ```
 
-The suite covers boundary cases, valid planting positions, impossible requests, input preservation, invalid inputs, and exhaustive agreement between both algorithms for all valid streets of up to eight plots and requested counts through `P + 1`.
+### Benchmarking
 
-## Benchmarking
+We expanded the timing experiment from five street sizes to seven, adding 28 and 32 plots. Each street starts empty, and we request $P/2+1$ trees for these even street sizes. At most $P/2$ trees can fit, so both algorithms must report failure. This makes the baseline finish searching rather than stop after finding an early solution. Each time below is the median of three runs from a fresh run in the same environment.
 
 Run the timing script with:
 
@@ -24,16 +24,24 @@ Run the timing script with:
 python benchmark.py
 ```
 
-For each size, the script requests more trees than can fit in an all-empty street. This forces backtracking to examine its search space before reporting failure, while the greedy algorithm completes a single scan. The script reports the median of three runs; results vary by computer and Python version.
+| Plots | Trees requested | Baseline time (seconds) | Greedy time (seconds) | Time reduction |
+| --- | --- | --- | --- | --- |
+| 8 | 5 | 0.000056666 | 0.000004687 | 91.7287% |
+| 12 | 7 | 0.000309218 | 0.000003655 | 98.8180% |
+| 16 | 9 | 0.002542734 | 0.000005008 | 99.8030% |
+| 20 | 11 | 0.016508224 | 0.000006410 | 99.9612% |
+| 24 | 13 | 0.124132768 | 0.000006941 | 99.9944% |
+| 28 | 15 | 0.896496264 | 0.000008062 | 99.9991% |
+| 32 | 17 | 6.943232570 | 0.000008543 | 99.9999% |
 
-| Plots | Trees requested | Backtracking (seconds) | Greedy (seconds) |
-|---:|---:|---:|---:|
-| 8 | 5 | 0.000090600 | 0.000004400 |
-| 12 | 7 | 0.000368700 | 0.000004500 |
-| 16 | 9 | 0.002223700 | 0.000007600 |
-| 20 | 11 | 0.016602500 | 0.000006800 |
-| 24 | 13 | 0.126118900 | 0.000012000 |
+We calculate the percent reduction in time using:
 
-## Findings
+$
+\text{Time reduction} = \frac{\text{Baseline time} - \text{Greedy time}}{\text{Baseline time}} \times 100\%
+$
 
-The exhaustive tests check the greedy algorithm's feasibility result against the baseline across every tested input, and validate that returned positions obey the no-adjacent-trees rule. In this run, increasing the all-empty street from 8 to 24 plots increased measured backtracking time from 0.000090600 s to 0.126118900 s; greedy time remained between 0.000004400 s and 0.000012000 s. These are small single-machine measurements, so exact values vary, but the increasing gap is consistent with exponential search versus a linear scan.
+### Findings
+
+The gap between the algorithms became much larger as the street grew. At 8 plots, greedy reduced the measured time by about 91.73%. At 32 plots, the baseline took about 6.94 seconds while greedy took about 0.00000854 seconds, a reduction of about 99.9999%. Adding four plots from 28 to 32 made the baseline take about 7.7 times as long. We stopped at 32 because three baseline runs at that size already took about 21 seconds, and the search time was rising quickly.
+
+These results support our expectation that greedy handles longer streets much better. The baseline explores different groups of positions, while greedy only scans the street once. The very short greedy times fluctuate, so the table does not show a smooth increase at every size. This experiment covers impossible requests on empty streets; it does not show how both algorithms behave on every kind of input. A useful next experiment would include possible requests and streets with existing trees.
